@@ -1,4 +1,4 @@
-# p6-GTK-coreTemps
+# p6-GTK-CoreTemps
 
 ![Screenshot](grabs/CoreTemps.png?raw=true "CoreTemps Screenshot")
 
