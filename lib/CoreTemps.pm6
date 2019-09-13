@@ -44,8 +44,8 @@ sub styleBar($n, $b, $l) {
   $b.name = 'progress'     ~ $n.fmt('%02d');
   $l.name = 'progresLabel' ~ $n.fmt('%02d');
   $cssStyle ~= qq:to/BAR/;
-    #{$l.name} \{
-      padding-top: 6px;
+    #{$b.name} trough, #{$b.name} trough progress\{
+      min-height: 20px;
     \}
     #{$b.name} trough progress \{
       background-color: { $c.to-string('hex') }
@@ -78,7 +78,7 @@ sub MAIN (
     $a.window.set-size-request(300, -1);
     $a.window.destroy-signal.tap({ $a.exit });
 
-    my $vbox = GTK::Box.new-vbox;
+    my $vbox = GTK::Box.new-vbox(5);
 
     for @numCores {
       my $hbox = GTK::Box.new-hbox(2);
@@ -102,7 +102,7 @@ sub MAIN (
       $hbox.pack-start($l);
       $vbox.pack-start($hbox, True);
     }
-    $vbox.margin-bottom = 20;
+    ($vbox.margin-top, $vbox.margin-bottom) = 20 xx 2;
 
     my $css = GTK::CSSProvider.new( style => $cssStyle );
 
