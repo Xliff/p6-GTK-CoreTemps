@@ -17,6 +17,7 @@ constant minHue = 50;
 constant maxHue = 310;
 
 my (@pb, @l);
+
 my $cssStyle;
 
 sub coreTemps {
@@ -44,6 +45,11 @@ sub styleBar($n, $b, $l) {
   $b.name = 'progress'     ~ $n.fmt('%02d');
   $l.name = 'progresLabel' ~ $n.fmt('%02d');
   $cssStyle ~= qq:to/BAR/;
+    #{$l.name} \{
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px black;
+    \}
     #{$b.name} trough, #{$b.name} trough progress\{
       min-height: 20px;
     \}
@@ -90,8 +96,6 @@ sub MAIN (
       # 100 deg C.
       $pb.fraction = $_ / 100;
 
-      # Use 2/3rds of the width. See YYY note above.
-
       $l.text = .fmt('%2d');
       $l.valign = GTK_ALIGN_END;
       $l.margin-right = 10;
@@ -106,6 +110,8 @@ sub MAIN (
 
     my $css = GTK::CSSProvider.new( style => $cssStyle );
 
+    $a.window.app-paintable = True;
+    $a.window.visual = $a.window.screen.get-rgba-visual;
     $a.window.add($vbox);
     $a.window.show-all;
 
