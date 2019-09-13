@@ -43,8 +43,11 @@ sub MAIN (
 {
   my @numCores = coreTemps;
 
+  die 'No core temperatures found. Please check that lm-sensors is setup correctly!'
+    unless @numCores;
+
   my $hues =
-  (minHue, minHue + ((maxHue - minHue) / (+@numCores - 1)).Int ... maxHue );
+    (minHue, minHue + ((maxHue - minHue) / (+@numCores - 1)).Int ... maxHue );
 
   my $a = GTK::Application.new( title => 'org.genex.coreTemps' );
 
