@@ -110,6 +110,15 @@ sub MAIN (
 
     my $css = GTK::CSSProvider.new( style => $cssStyle );
 
+    $a.window.enter-notify-event.tap(-> *@a {
+      $a.window.decorated = True;
+      @a[* - 1].r = 1;
+    });
+    $a.window.leave-notify-event.tap(-> *@a {
+      $a.window.decorated = True;
+      @a[* - 1].r = 1;
+    });
+
     $a.window.app-paintable = True;
     $a.window.visual = $a.window.screen.get-rgba-visual;
     $a.window.add($vbox);
