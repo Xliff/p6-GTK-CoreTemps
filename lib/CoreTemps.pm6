@@ -110,6 +110,27 @@ sub MAIN (
 
     my $css = GTK::CSSProvider.new( style => $cssStyle );
 
+    my $out-focus;
+    sub setOutFocus {
+      $out-focus = $*SCHEDULER.cue(in => 5, {
+        GDK::Threads.add-idle(-> *@a --> gboolean {
+          $a.window.decorated = False;
+          $out-focus = Nil;
+          G_SOURCE_REMOVE;
+        });
+      });
+    }
+
+    $a.window.enter-notify-event.tap(-> *@a {
+      $out-focus.cancel if $out-focus;
+      $a.window.decorated = True;
+      @a[* - 1].r = 1;
+    });
+    $a.window.leave-notify-event.tap(-> *@a {
+      setOutFocus;
+      @a[* - 1].r = 1;
+    });
+
     $a.window.app-paintable = True;
     $a.window.visual = $a.window.screen.get-rgba-visual;
     $a.window.add($vbox);
