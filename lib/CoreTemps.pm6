@@ -9,6 +9,7 @@ use GDK::Threads;
 
 use GTK::Application;
 use GTK::Box;
+use GTK::CSSProvider;
 use GTK::ProgressBar;
 use GTK::Label;
 
@@ -16,6 +17,7 @@ constant minHue = 50;
 constant maxHue = 310;
 
 my (@pb, @l);
+my $cssStyle;
 
 sub coreTemps {
   my $so = qx{sensors};
@@ -36,6 +38,23 @@ sub updateTemps(@t) {
   });
 }
 
+sub styleBar($n, $b, $l) {
+  my $c = Color.new( hsv => (@*hues[$n - 1], 50, 100) );
+
+  $b.name = 'progress'     ~ $n.fmt('%02d');
+  $l.name = 'progresLabel' ~ $n.fmt('%02d');
+  $cssStyle ~= qq:to/BAR/;
+    #{$l.name} \{
+      padding-top: 6px;
+    \}
+    #{$b.name} trough progress \{
+      background-color: { $c.to-string('hex') }
+    \}
+    BAR
+
+}
+
+
 sub MAIN (
   Int :$interval = 2      #= Interval between updates
 )
@@ -46,7 +65,7 @@ sub MAIN (
   die 'No core temperatures found. Please check that lm-sensors is setup correctly!'
     unless @numCores;
 
-  my $hues =
+  my @*hues =
     (minHue, minHue + ((maxHue - minHue) / (+@numCores - 1)).Int ... maxHue );
 
   my $a = GTK::Application.new( title => 'org.genex.coreTemps' );
@@ -63,24 +82,29 @@ sub MAIN (
 
     for @numCores {
       my $hbox = GTK::Box.new-hbox(2);
-      @pb.push: GTK::ProgressBar.new;
 
+      @pb.push: (my $pb = GTK::ProgressBar.new   );
+      @l.push:  (my $l  = GTK::Label.new( .Str ) );
       # cw: -YYY- Naked value!
       # This works well as a STUB because most procs have a TjMax of around
       # 100 deg C.
-      @pb[* - 1].fraction = $_ / 100;
+      $pb.fraction = $_ / 100;
 
       # Use 2/3rds of the width. See YYY note above.
-      @l.push: GTK::Label.new( .Str );
-      @l[* - 1].text = .fmt('%2d');
-      @l[* - 1].valign = GTK_ALIGN_END;
-      @l[* - 1].margin-right = 10;
 
-      $hbox.pack-start(@pb[* - 1], True);
-      $hbox.pack-start(@l[* - 1]);
+      $l.text = .fmt('%2d');
+      $l.valign = GTK_ALIGN_END;
+      $l.margin-right = 10;
+
+      styleBar( @pb.elems, $pb, $l);
+
+      $hbox.pack-start($pb, True);
+      $hbox.pack-start($l);
       $vbox.pack-start($hbox, True);
     }
     $vbox.margin-bottom = 20;
+
+    my $css = GTK::CSSProvider.new( style => $cssStyle );
 
     $a.window.add($vbox);
     $a.window.show-all;
