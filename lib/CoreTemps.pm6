@@ -18,12 +18,56 @@ constant maxHue = 310;
 
 my (@pb, @l);
 
+my %labels;
+
 my $cssStyle;
 
+my $temp-dir = "/sys/bus/platform/drivers/coretemp/coretemp.0/hwmon/hwmon0".IO;
+my @tf = $temp-dir.dir( test => *.Str.ends-with('_input') );
+
 sub coreTemps {
-  my $so = qx{sensors};
-  my $m = $so ~~ m:g/^^ Core \s \d+\: \s* \+(\d+)/;
-  $m.Array.map( *[0].Int );
+  my @temps;
+  # This will eventually be abstracted out into a detection routine.
+
+  when $temp-dir.d {
+    @temps = do gather for @tf {
+      my @parts = .Str.split('_');
+
+      # Remove label code to its own routine that gets called FIRST!
+      # ...or they can be removed.
+      #
+      # Consider letting the user make this decision via config?
+      #
+      # when ( @parts[1] eq 'label', %labels{ @parts[0] }:exists ).all {
+      # }
+      #
+      # when @parts[1] eq 'label' {
+      #   %label{ @parts[0] } = .IO.slurp.chomp;
+      # }
+      #
+      # when @parts[1] eq <max crit crit_alarm>.any {
+      # }
+
+      when @parts[1] eq 'input' {
+        # The divider may not always be 1000. This will need to be abstracted
+        # if more chips are added!
+        take Pair.new(@parts[0], .IO.slurp.chomp.Int / 1000);
+      }
+
+      default {
+        warn "Don't know how to handle the '{ .IO.absolute }' file";
+      }
+    };
+
+    # Don't take the package temp.
+    @temps .= skip(1).sort( *.key ).map( *.value );
+  }
+
+  default {
+    my $so = qx{sensors};
+    my $m = $so ~~ m:g/^^ Core \s \d+\: \s* \+(\d+)/;
+    $m.Array.map( *[0].Int );
+  }
 }
 
 sub updateTemps(@t) {
